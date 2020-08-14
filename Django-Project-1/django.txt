@@ -1,0 +1,368 @@
+-> python -m pip install Django
+-> django-admin startproject pyshop .
+* we will get a folder which contain the mulitple files and a file manage.py
+-> python manage.py runserver
+* this will run the webserver copy the link and paste in browser
+
+-> Suppose we have a website which have different portion, product management, customer management, order management
+* in order to build together we will divide each in different app like in 4 apps and then work on them to do that lets create a first app
+
+-> python manage.py startapp products		// this will create a folder with name products
+* this folder will create mulitples files
+
+-> goto products folder and open the view module
+-> Add a new python file for url mappling and name it 
+urls.py (must)
+
+-> now goto pyshop folder and open the base urls.py file
+-> add one module in path module - include # to include the product url
+
+from django.urls import path, include
+
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('products/',include('products.urls'))
+]
+
+http://127.0.0.1:8000/products/
+
+-> create a new function in view file for new url
+http://127.0.0.1:8000/products/new
+
+def new(request):
+    return HttpResponse('New URL')
+
+* goto url file of products folder and map it
+
+from django.urls import path
+from . import views
+
+# /products/1/detail 
+# /products/new
+# don't call function django will take care at run time when the request is made
+
+
+* create a new function in view file called prod and map in products url file 
+urlpatterns = [
+    path('',views.index),
+    path('prod',views.prod) 
+]
+
+-> now goto product folder  and open module.py file to start working with module and add the following contents
+
+class Product(models.Model):
+    name = models.CharField(max_length=255)		// to restrict input limit or malicious entry
+    price = models.FloatField()
+    stock = models.IntegerField()	
+    image_url = models.CharField(max_lenth=2083)	// to protect from malicious entry
+
+-> now goto db.sqlite3 which is database file for django application *for smaller application
+
+* to create the table automatically using django run the following cmd
+-> python manage.py makemigrations
+# if you get output -> No changes detected 		// this means django by default doesnt know the product model
+
+* to solve the above the problem goto pyshop folder
+-> settings.py -> line number 33 (INSTALLED APPS)
+
+* now goto products folder -> apps.py file
+
+-> add the following line in settings.py to INSTALLED_APPS
+
+'products.apps.ProductsConfig'
+
+-> Now run the command
+python manage.py makemigrations
+* if got the following output means successfull
+
+Migrations for 'products':
+  products\migrations\0001_initial.py
+    - Create model Product
+
+* now goto migration folder and open 0001_initial file
+this file will tell you the operation to be performed for creating the table
+
+-> Now run the following command to create table
+
+python manage.py migrate
+
+* if you see the following output then it means successful
+
+Operations to perform:
+  Apply all migrations: admin, auth, contenttypes, products, sessions
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying auth.0001_initial... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying products.0001_initial... OK
+  Applying sessions.0001_initial... OK
+
+# now create a module for Offer:-
+
+* goto the models.py and add the following class
+
+
+class Offer(models.Model):
+    code = models.CharField(max_length=10)
+    description = models.CharField(max_length=255)
+    discount = models.FloatField()
+    
+
+now create the migration by running the following cmd
+
+- python manage.py makemigrations
+
+Migrations for 'products':
+  products\migrations\0002_offer.py
+    - Create model Offer
+
+- python manage.py migrate
+
+-------------------------------------------------
+
+# Creating superuser in django application
+
+- python manage.py createsuperuser
+* enter username, passwd, email
+ex: admin, 1234, abc@gmail.com
+
+* now goto products folder and open admin.py file and add the following content
+
+from .models import Product
+
+# Register your models here.
+admin.site.register(Product)
+
+* this is to manage product by admin only
+* now refresh the page you will see the product click on add and the data
+
+Orange
+1.99
+50
+link-> https://upload.wikimedia.org/wikipedia/commons/7/7b/Orange-Whole-%26-Split.jpg
+
+--------------------------------------------------------------------
+
+# Customizing admin
+* goto admin file and add the following content
+
+class ProductAdmin (admin.ModelAdmin):
+	list_display = ()
+
+* goto model.py and from there use attributes and add in the 
+list_display = ('name','price','stock')
+
+admin.site.register(Product,ProductAdmin)
+
+* now go and refresh the page you will see new output as Orange appear inplace of Product Object
+
+-> Now doing same for Offer class
+
+import the Offer class as imported for Product
+
+class OfferAdmin(admin.ModelAdmin):
+	list_display = ('code','discount')
+
+admin.site.register(Offer,OfferAdmin)
+
+* refresh the bowser and add offer
+
+------------------------------------------------------------
+
+# Using template
+
+-> goto products and open file views.py
+
+add the following content in the view file (retrieving data from database and adding it using HTML)
+
+from .models import Product
+
+in index function add the following code
+
+products = Product.objects.all()		// retrieving data from databases
+
+* now create a folder inside products folder and name it to templates (make sure name is spelled correctly)
+inside templates folder create a file with name index.html
+ and add the following code:
+
+<h1>Products</h1>
+<ul>
+  <li>Item1</li>
+  <li>Item2</li>
+  <li>Item3</li>
+</ul>
+
+
+now goto the views.py and change the return statement
+
+return render(request, 'index.html',{'products': products})		// pass the request and template file
+
+* now goto templates index.html and add the following in ul tag
+{% for product in products %}
+<li>{{ product.name }}</li>
+{% endfor %}
+
+** now displaying price of each product infront of them 
+
+<li>{{ product.name }} {{ product.price }}</li>
+or 
+<li>{{ product.name }} (${{ product.price }})</li>
+
+------------------------------------
+
+# Adding Bootstrap in our website
+
+* goto bootstrap documentation and copy the starter template
+https://getbootstrap.com/docs/4.5/getting-started/introduction/
+
+and copy the text from starter template and paste inside the template folder
+by creating a new file with name (base.html)
+and paste the code and make the changes as below
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+    <title>Hello, world!</title>
+  </head>
+  <body>
+	{% block content %}
+	{% endblock %}
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+  </body>
+</html>
+
+* now goto index.html and add the following code:
+
+{% extends 'base.html' %} 
+
+{% block content %}
+<h1>Products</h1>
+<ul>
+  {% for product in products %}
+  <li>{{ product.name }} (${{ product.price }})</li>
+  {% endfor %}
+</ul>
+{% endblock %}
+
+* now refresh the page
+
+-----------------------------------------------------------------------------------
+
+# Making card and pictures display
+
+* now goto bootstrap documentation and click on the components card
+https://getbootstrap.com/docs/4.5/components/card/
+
+* copy the markup code
+
+* now goto index.html and add the folowing in block content
+
+<div class="row">
+	<div class="col">
+*paste the code
+
+<div class="card" style="width: 18rem;">
+  <img src="..." class="card-img-top" alt="...">
+  <div class="card-body">
+    <h5 class="card-title">Card title</h5>
+    <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+    <a href="#" class="btn btn-primary">Go somewhere</a>
+  </div>
+</div>
+
+	</div>
+</div>
+
+* add add the following thing in code and finally code look like this
+* go refresh the webpage (work fine but picture would not display)
+
+
+{% extends 'base.html' %} {% block content %}
+<h1>Products</h1>
+<div class="row">
+  {% for product in products %}
+  <div class="col">
+    <div class="card" style="width: 18rem;">
+      <img src="{{ product.image_url }}" class="card-img-top" alt="..." />
+      <div class="card-body">
+        <h5 class="card-title">{{ product.name }}</h5>
+        <p class="card-text">${{ product.price }}</p>
+        <a href="#" class="btn btn-primary">Add to Cart</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+-----------------------------------------------
+
+# final touch 
+
+* adding navigation bar and padding 
+* visit bootstrap doc and click on navigation component
+https://getbootstrap.com/docs/4.5/components/navbar/
+
+* copy the code and paste in base.html below body tag 
+<!-- As a link -->
+    <nav class="navbar navbar-light bg-light">
+      <a class="navbar-brand" href="#">PyShop</a>
+    </nav>
+
+
+* since we have created the base template inside products folder so its not reusable for other application
+to make it reusable create a folder with name templates in main folder of project
+
+drag and drop the base.html to this folder location
+
+* now if you refresh the web page you will get the template error scroll down the page for more info
+* now make the created template folder entry into app
+
+* goto pyshop foler -> settings.py
+
+search for option TEMPLATES (around line 55) 
+import os 
+
+inside this edit 'DIRS': [
+			os.path.join(BASE_DIR,'templates')
+			]
+
+* now making padding :-
+
+goto base.html 
+
+below <nav ..>
+</nav>
+
+add 
+<div class="container">
+      {% block content %} {% endblock %}		// make this inside container class
+  </div>
+
+
